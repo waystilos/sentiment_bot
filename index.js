@@ -7,8 +7,12 @@ const {
   RTM_EVENTS
 } = require('@slack/client');
 
+const request = require('request');
+
 const express = require('express');
 const app = express();
+
+const NAGKUMAR_URL = process.env.URL;
 
 const bot_token = process.env.SLACK_TOKEN;
 
@@ -23,6 +27,18 @@ const rtm = new RTMClient(bot_token, {
     useRtmConnect: true
 });
 
+function getSlackText(message) {
+    request.post(NAGKUMAR_URL, { json: { text: message.text } }, function(
+    error,
+    response,
+    body
+  ) {
+    if (!error && response.statusCode == 200) {
+      console.log(body);
+    }
+  });
+}
+
 rtm.on('message', (message) => {
     console.dir(message);
     rtm
@@ -33,12 +49,5 @@ rtm.on('message', (message) => {
         })
         .catch(console.error);
 });
-
-function getSlackText(message) {
-    app.post('/sentiment', (req, res, next) => {
-        console.log(message.text);
-        res.send(message.text);
-    });
-}
 
 rtm.start();
