@@ -9,9 +9,6 @@ const {
 
 const request = require('request');
 
-const express = require('express');
-const app = express();
-
 const NAGKUMAR_URL = process.env.URL;
 
 const bot_token = process.env.SLACK_TOKEN;
@@ -23,7 +20,7 @@ const appData = {};
 const web = new WebClient(bot_token);
 
 const rtm = new RTMClient(bot_token, {
-    dataStore: true,
+    dataStore: false,
     useRtmConnect: true
 });
 
@@ -34,20 +31,32 @@ function getSlackText(message) {
     body
   ) {
     if (!error && response.statusCode == 200) {
-      console.log(body);
+        console.log(`magnitude: ${body.magnitude} / score: ${body.score}`);
+        sendMessage(body);
     }
   });
 }
 
+function sendMessage(body) {
+    web.chat
+      .postMessage({ channel: channelId, text: `Magnitude: ${body.magnitude} / Score: ${body.score}`})
+      .then(res => {
+        // `res` contains information about the posted message
+        console.log('Message sent: ', res.ts);
+      })
+      .catch(console.error);
+}
+
 rtm.on('message', (message) => {
     console.dir(message);
-    rtm
-        .sendMessage(`message sent to channel name: ${message.channel}`, channelId)
-        .then(() => {
-            getSlackText(message);
-            console.log(`message sent to channel name: <${message.channel}>`);
-        })
-        .catch(console.error);
+    if (message.bot_id !== 'BAR2QBDQE') {
+        rtm
+            .sendMessage(`Let's check your emotions...`, channelId)
+            .then(() => {
+                getSlackText(message);
+            })
+            .catch(console.error);
+    }
 });
 
 rtm.start();
